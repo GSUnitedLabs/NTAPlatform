@@ -1,2 +1,21 @@
-# NTAPlatform
-The repo upon which the Northwind Traders Basic Edition is going to be built.
+## ![image](https://github.com/GSUnitedLabs/NTA.Wiki.Images/blob/main/xlarge/northwind48.png) Welcome to Northwind Traders Basic Edition and the NTA Platform ![image](https://github.com/GSUnitedLabs/NTA.Wiki.Images/blob/main/xlarge/northwind48.png)
+[[ Information for Users ]](#Information-for-Users) | [[ Information for Contributors ]](#Information-for-Contributors) | [[ Information for Developers ]](#Information-for-Developers)
+
+The Northwind Traders Basic Edition and NTA Platform fill a niche for accounting packages in an industry that has vastly different needs for the financial breakdown of information &mdash; The trucking industry.
+
+The trucking industry is a *per mile* industry, where the only financial information that matters is based upon the number of miles a unit may travel. These miles are either logged as ***empty*** or ***loaded***, depending upon whether the unit is hauling a load from *Point A* to *Point B*, or *deadheading* from *Point B* to *Point C* to pick up another load. Regardless of whether the truck is loaded or empty, there are multiple costs involved in the unit movement, such as fuel, maintenance, tolls/parking, etc. Even when the unit is not actively hauling a load, if it is moving, it is incurring these costs. This is *why* the financial breakdown that makes the most sense to the trucking industry is the *per mile* breakdown. While empty, units typically get higher fuel economy and lower maintenance costs than when loaded. However, every mile moved costs the company money. All of the expenses mentioned so far do not even take into account the pay for the driver of the unit, who is usually also paid per mile when the unit is empty, as well as when the unit is loaded.
+
+Accounting systems for the trucking industry ***do*** exist, but most of them are aimed at the larger companies, such as Swift Transportation, Werner, Schneider, etc. There are a few that take the one-truck, owner/operator business model into account. Of the first group, the software is very expensive to license and has more features than the one-truck folks need. Of the second group, the available options come with recurring monthly fees to use them. Neither of these options is great. While the software from the first group tends to provide load tracking (mainly due to providing dispatching features), the software from the second group does not.
+
+Northwind Traders Basic Edition and the NTA Platform aim to answer this lack of software that tracks revenue and expenses *per mile*, as well as providing the one-truck to small fleet folks some load tracking features.
+
+### Information for Users
+Northwind Traders Basic Edition offers the features that users need and want. It is a desktop application, instead of a web-based system, so there is no need for an internet connection for day-to-day use. There are no recurring monthly, quarterly, or annual charges: you will only need to pay for Northwind Traders one time&hellip;And this is ***after*** your 30-day free trial period (no credit card required to download and try it out for thirty days).
+
+Even during the trial period, as updates become available and you *are* connected to the internet, those updates will automatically download and install so you will always have the latest features and bug fixes. Once purchased, there will never be another charge, not even when new editions are released&hellip;The application will automatically upgrade the same way it applies updates. Until the system is purchased, the only point of difference from a purchased system will be the "Purchase Northwind Now" menu item in the Help menu. Once purchased, that menu item will no longer be present. Even during the trial period, Northwind Traders will be fully functional and in no way disabled.
+
+After all, the goal of GS United Labs is to make our customers happy! In order to make our customers happy, we need to know what our customers' wants and needs are. Therefore, we offer a form for you to [tell us what those needs and wants are by telling us how you currently do things](https://docs.google.com/forms/d/e/1FAIpQLSfB0DHNQ0ICYaWBO3jgfItRagjncbjuKSrx64N1I-xGkk5brQ/viewform?usp=sf_link).
+
+### Information for Contributors
+
+### Information for Developers
