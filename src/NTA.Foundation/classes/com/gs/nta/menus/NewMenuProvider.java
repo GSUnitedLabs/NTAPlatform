@@ -32,7 +32,7 @@
  */
 package com.gs.nta.menus;
 
-import com.gs.nta.api.SubMenuProvider;
+import com.gs.api.SubMenuProvider;
 
 /**
  *

@@ -32,7 +32,7 @@
  */
 package com.gs.nta.desktop.panels;
 
-import com.gs.nta.utils.MessageBox;
+import com.gs.utils.MessageBox;
 import java.net.URL;
 import javax.swing.ImageIcon;
 

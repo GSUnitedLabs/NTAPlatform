@@ -31,9 +31,9 @@
  * *****************************************************************************
  */
 package com.gs.nta.desktop;
-
+ 
 import com.gs.nta.NTApp;
-import com.gs.nta.api.OptionsPanelProvider;
+import com.gs.api.OptionsPanelProvider;
 import java.awt.CardLayout;
 import java.awt.Component;
 import java.beans.PropertyChangeEvent;

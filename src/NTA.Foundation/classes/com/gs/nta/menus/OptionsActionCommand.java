@@ -32,7 +32,7 @@
  */
 package com.gs.nta.menus;
 
-import com.gs.nta.api.ActionCommandProvider;
+import com.gs.api.ActionCommandProvider;
 
 
 /**

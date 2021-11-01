@@ -36,19 +36,22 @@ open module NTA.Accounting {
     requires java.desktop;
     requires appframework;
     requires swing.worker;
+    requires GS.United.Labs.API;
     requires NTA.Foundation;
+    requires NTA.Properties;
+    requires NTA.Utils;
     
-    uses com.gs.nta.api.AboutPanelProvider;
-    uses com.gs.nta.api.ActionCommandProvider;
-    uses com.gs.nta.api.MenuProvider;
-    uses com.gs.nta.api.ModuleRegistrar;
-    uses com.gs.nta.api.OptionsPanelProvider;
-    uses com.gs.nta.api.SubMenuProvider;
+    uses com.gs.api.AboutPanelProvider;
+    uses com.gs.api.ActionCommandProvider;
+    uses com.gs.api.MenuProvider;
+    uses com.gs.api.ModuleRegistrar;
+    uses com.gs.api.OptionsPanelProvider;
+    uses com.gs.api.SubMenuProvider;
     
-    provides com.gs.nta.api.AboutPanelProvider 
+    provides com.gs.api.AboutPanelProvider 
             with com.gs.nta.accounting.desktop.AccountingAboutPanelProvider;
-    provides com.gs.nta.api.MenuProvider 
+    provides com.gs.api.MenuProvider 
             with com.gs.nta.accounting.menus.ManageMenuProvider;
-    provides com.gs.nta.api.OptionsPanelProvider 
+    provides com.gs.api.OptionsPanelProvider 
             with com.gs.nta.accounting.options.AccountingOptionsPanel;
 }

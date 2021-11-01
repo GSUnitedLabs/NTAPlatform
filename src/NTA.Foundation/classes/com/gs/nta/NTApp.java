@@ -32,20 +32,18 @@
  */
 package com.gs.nta;
 
-import com.gs.nta.api.ActionCommandProvider;
-import com.gs.nta.api.MenuProvider;
-import com.gs.nta.api.SubMenuProvider;
-import com.gs.nta.api.ToolbarButtonProvider;
+import com.gs.api.GSLogRecord;
+import com.gs.api.GSLogger;
+import com.gs.api.ActionCommandProvider;
+import com.gs.api.MenuProvider;
+import com.gs.api.SubMenuProvider;
+import com.gs.api.ToolbarButtonProvider;
 import com.gs.nta.desktop.AboutDialog;
 import com.gs.nta.desktop.MainFrame;
 import com.gs.nta.desktop.OptionsDialog;
 import com.gs.nta.desktop.SplashScreen;
-import com.gs.nta.utils.ArgumentParser;
-import com.gs.nta.utils.LogRecord;
-import com.gs.nta.utils.Logger;
-import com.gs.nta.utils.MessageBox;
-import com.gs.nta.utils.Properties;
-import java.awt.Component;
+import com.gs.utils.ArgumentParser;
+import com.gs.nta.properties.Properties;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -80,7 +78,7 @@ import org.jdesktop.application.Task;
  * line parameters are:</p>
  * <dl><dt>{@code -i} ~or~ {@code --devel}</dt>
  * <dd>Places the application into developer mode. In this mode, the logging
- * level is set to {@code Logger.DEBUG}, which is the most verbose logging
+ * level is set to {@code GSLogger.DEBUG}, which is the most verbose logging
  * level. Furthermore, the registration process is bypassed for developers.
  * </dd><dt>{@code --level=[LoggingLevel}</dt>
  * <dd>Provides the level for the logging function for the current run of the
@@ -122,8 +120,8 @@ import org.jdesktop.application.Task;
 public class NTApp extends SingleFrameApplication {
 
     private Properties props;
-    private Logger logger;
-    private final LogRecord record = new LogRecord(NTApp.class.getSimpleName());
+    private GSLogger logger;
+    private GSLogRecord record;
     private MainFrame mainFrame;
     private List<MenuProvider> menuList;
     private HashMap<Comparable, String> menuItems;
@@ -146,8 +144,27 @@ public class NTApp extends SingleFrameApplication {
     @Override
     protected void initialize(String[] args) {
         props = new Properties(getContext());
-        logger = Logger.getLogger(this, Logger.TRACE);
+        
+        // To initialize the logger, we need to get a service for it.
+        ServiceLoader<GSLogger> logLoader = ServiceLoader.load(GSLogger.class);
+        // We are only interested in the first GSLogger that we find.
+        logger = logLoader.iterator().next();
+        logger.setClassName(getClass().getCanonicalName());
+        logger.updateLogName();
+        logger.setLevel(getContext().getResourceMap().getInteger("Application.logging.level"));
         logger.setFormattedOutput(true);
+
+        // To initialize the record, we need to get a service for it.
+        ServiceLoader<GSLogRecord> recordLoader = ServiceLoader.load(GSLogRecord.class);
+        // We are only interested in the first GSLogRecord that we find.
+        record = recordLoader.iterator().next();
+        record.setSourceClassName(logger.getClassName());
+        record.setInstant(Instant.now());
+        record.setMessage("Initializing the application");
+        record.setParameters(args);
+        record.setSourceMethodName("initialize");
+        record.setThread(Thread.currentThread());
+        logger.enter(record);
         mainFrame = new MainFrame(this);
         parseArguments(args);
         loadMainMenuItems();
@@ -180,7 +197,7 @@ public class NTApp extends SingleFrameApplication {
         record.setInstant(Instant.now());
         record.setSourceMethodName("shutdown");
         record.setParameters(null);
-        record.setThreadID(Thread.currentThread().getId());
+        record.setThread(Thread.currentThread());
         record.setMessage("Commencing shutdown procedures.");
         logger.enter(record);
         
@@ -192,7 +209,7 @@ public class NTApp extends SingleFrameApplication {
         record.setInstant(Instant.now());
         record.setSourceMethodName("shutdown");
         record.setParameters(null);
-        record.setThreadID(Thread.currentThread().getId());
+        record.setThread(Thread.currentThread());
         record.setMessage("Completed shutdown procedures. "
                 + "Calling super.shutdown() and exiting NTA.");
         logger.exit(record);
@@ -230,7 +247,7 @@ public class NTApp extends SingleFrameApplication {
         record.setInstant(Instant.now());
         record.setSourceMethodName("parseArguments");
         record.setParameters(args);
-        record.setThreadID(Thread.currentThread().getId());
+        record.setThread(Thread.currentThread());
         record.setMessage("Preparing to parse the command-line arguments, if any.");
         logger.enter(record);
 
@@ -247,11 +264,11 @@ public class NTApp extends SingleFrameApplication {
             logger.config(record);
 
             props.setRuntimeProperty("development.mode", true);
-            props.setRuntimeProperty("logger.level", Logger.TRACE);
-            logger.setLevel(Logger.TRACE);
+            props.setRuntimeProperty("logger.level", GSLogger.TRACE);
+            logger.setLevel(GSLogger.TRACE);
         } else {
             props.setRuntimeProperty("development.mode", false);
-            props.setRuntimeProperty("logger.level", Logger.WARN);
+            props.setRuntimeProperty("logger.level", GSLogger.WARN);
         }
 
         record.setInstant(Instant.now());
@@ -277,48 +294,48 @@ public class NTApp extends SingleFrameApplication {
                     case "developing":
                     case "ide":
                     case "programming":
-                        props.setRuntimeProperty("logger.level", Logger.TRACE);
-                        logger.setLevel(Logger.TRACE);
+                        props.setRuntimeProperty("logger.level", GSLogger.TRACE);
+                        logger.setLevel(GSLogger.TRACE);
                         break;
                     case "debugging":
                     case "debug":
                     case "dbg":
-                        props.setRuntimeProperty("logger.level", Logger.DEBUG);
-                        logger.setLevel(Logger.DEBUG);
+                        props.setRuntimeProperty("logger.level", GSLogger.DEBUG);
+                        logger.setLevel(GSLogger.DEBUG);
                         break;
                     case "configuration":
                     case "configure":
                     case "config":
                     case "cfg":
-                        props.setRuntimeProperty("logger.level", Logger.CONFIG);
-                        logger.setLevel(Logger.CONFIG);
+                        props.setRuntimeProperty("logger.level", GSLogger.CONFIG);
+                        logger.setLevel(GSLogger.CONFIG);
                         break;
                     case "informational":
                     case "information":
                     case "inform":
                     case "info":
                     case "inf":
-                        props.setRuntimeProperty("logger.level", Logger.INFO);
-                        logger.setLevel(Logger.INFO);
+                        props.setRuntimeProperty("logger.level", GSLogger.INFO);
+                        logger.setLevel(GSLogger.INFO);
                         break;
                     case "warning":
                     case "warn":
-                        props.setRuntimeProperty("logger.level", Logger.WARN);
-                        logger.setLevel(Logger.WARN);
+                        props.setRuntimeProperty("logger.level", GSLogger.WARN);
+                        logger.setLevel(GSLogger.WARN);
                         break;
                     case "error":
                     case "err":
-                        props.setRuntimeProperty("logger.level", Logger.ERROR);
-                        logger.setLevel(Logger.ERROR);
+                        props.setRuntimeProperty("logger.level", GSLogger.ERROR);
+                        logger.setLevel(GSLogger.ERROR);
                         break;
                     case "critical":
                     case "severe":
-                        props.setRuntimeProperty("logger.level", Logger.CRITICAL);
-                        logger.setLevel(Logger.CRITICAL);
+                        props.setRuntimeProperty("logger.level", GSLogger.CRITICAL);
+                        logger.setLevel(GSLogger.CRITICAL);
                         break;
                     default:
-                        props.setRuntimeProperty("logger.level", Logger.OFF);
-                        logger.setLevel(Logger.OFF);
+                        props.setRuntimeProperty("logger.level", GSLogger.OFF);
+                        logger.setLevel(GSLogger.OFF);
                 }
             }
         }
@@ -399,7 +416,7 @@ public class NTApp extends SingleFrameApplication {
                 + "using the list %s", menuList));
         record.setParameters(null);
         record.setSourceMethodName("buildMainMenu");
-        record.setThreadID(Thread.currentThread().getId());
+        record.setThread(Thread.currentThread());
         logger.enter(record);
 
         menuList.forEach(m -> {
@@ -432,7 +449,7 @@ public class NTApp extends SingleFrameApplication {
         record.setSourceMethodName("recursivelyAddSubMenusAndMenuItems");
         record.setMessage(String.format("Commencing recursively adding the menu "
                 + "items to the main menu using menuItems: %s", menuItems));
-        record.setThreadID(Thread.currentThread().getId());
+        record.setThread(Thread.currentThread());
         logger.enter(record);
 
         // We know that the menuItems map has already been sorted after the menu
@@ -465,7 +482,7 @@ public class NTApp extends SingleFrameApplication {
                 record.setInstant(Instant.now());
                 record.setMessage(String.format("Adding key (%s) to items (%s)",
                         key, items));
-                record.setThreadID(Thread.currentThread().getId());
+                record.setThread(Thread.currentThread());
                 logger.debug(record);
                 // Add the comparable to the list.
                 items.add(key);
@@ -506,7 +523,7 @@ public class NTApp extends SingleFrameApplication {
         }
 
         record.setInstant(Instant.now());
-        record.setThreadID(Thread.currentThread().getId());
+        record.setThread(Thread.currentThread());
         record.setMessage(String.format("Calling addItemsListToMenu(%s, %s)",
                 items, currentMenu));
         // Now, we can add these items to the menu they have requested.
@@ -719,7 +736,7 @@ public class NTApp extends SingleFrameApplication {
             }
         } catch (NullPointerException ex) {
             record.setInstant(Instant.now());
-            record.setThreadID(Thread.currentThread().getId());
+            record.setThread(Thread.currentThread());
             record.setSourceMethodName("addItemsListToMenu");
             record.setThrown(ex);
             logger.critical(record);
@@ -744,7 +761,7 @@ public class NTApp extends SingleFrameApplication {
 
         record.setInstant(Instant.now());
         record.setMessage("Returning to recursivelyAddSubMenusAndMenuItems()");
-        record.setThreadID(Thread.currentThread().getId());
+        record.setThread(Thread.currentThread());
         logger.exit(record);
     } // </editor-fold>
 
@@ -832,18 +849,19 @@ public class NTApp extends SingleFrameApplication {
     private class StartupTask extends Task<Void, Void> {
 
         private final SplashScreen splash;
-        private final Logger log = Logger.getLogger(getApplication(), Logger.TRACE);
-        private final LogRecord record = new LogRecord(StartupTask.class.getSimpleName());
+//        private final GSLogger log = new GSLogger();
+//        private final LogRecord record = new LogRecord(StartupTask.class.getSimpleName());
         
         public StartupTask(Application application) {
             super(application);
+            logger.setLevel(GSLogger.TRACE);
             record.setInstant(Instant.now());
             record.setMessage("Constructing StartupTask");
             record.setParameters(new Object[]{application});
             record.setSequenceNumber(1l);
             record.setSourceMethodName("StartupTask [Constructor]");
-            record.setThreadID(Thread.currentThread().getId());
-            log.enter(record);
+            record.setThread(Thread.currentThread());
+            logger.enter(record);
             
             this.splash = new SplashScreen();
 //            splash.setUndecorated(true);
@@ -854,8 +872,8 @@ public class NTApp extends SingleFrameApplication {
             record.setParameters(new Object[]{application});
             record.setSequenceNumber(2l);
             record.setSourceMethodName("StartupTask [Constructor]");
-            record.setThreadID(Thread.currentThread().getId());
-            log.exit(record);
+            record.setThread(Thread.currentThread());
+            logger.exit(record);
         }
         
         
@@ -867,8 +885,8 @@ public class NTApp extends SingleFrameApplication {
             record.setParameters(null);
             record.setSequenceNumber(3l);
             record.setSourceMethodName("doInBackground");
-            record.setThreadID(Thread.currentThread().getId());
-            log.enter(record);
+            record.setThread(Thread.currentThread());
+            logger.enter(record);
             int progress = 0;
             setProgress(0);
             message("startMessage");
@@ -879,8 +897,8 @@ public class NTApp extends SingleFrameApplication {
             record.setParameters(null);
             record.setSequenceNumber(4l);
             record.setSourceMethodName("doInBackground");
-            record.setThreadID(Thread.currentThread().getId());
-            log.debug(record);
+            record.setThread(Thread.currentThread());
+            logger.debug(record);
             
             // First, we need to determine the number of items we are going to
             //+ be processing, so set the progressBar to indeterminate.
@@ -893,8 +911,8 @@ public class NTApp extends SingleFrameApplication {
             record.setParameters(null);
             record.setSequenceNumber(5l);
             record.setSourceMethodName("doInBackground");
-            record.setThreadID(Thread.currentThread().getId());
-            log.debug(record);
+            record.setThread(Thread.currentThread());
+            logger.debug(record);
             
             // Get the maximum value for our progressBar.
             final int mainMenuValue = getMainMenuCount();
@@ -908,8 +926,8 @@ public class NTApp extends SingleFrameApplication {
             record.setParameters(null);
             record.setSequenceNumber(6l);
             record.setSourceMethodName("doInBackground");
-            record.setThreadID(Thread.currentThread().getId());
-            log.debug(record);
+            record.setThread(Thread.currentThread());
+            logger.debug(record);
             
             splash.setIndeterminate(false);
             message("menuMessage");
@@ -919,8 +937,8 @@ public class NTApp extends SingleFrameApplication {
             record.setParameters(null);
             record.setSequenceNumber(7l);
             record.setSourceMethodName("doInBackground");
-            record.setThreadID(Thread.currentThread().getId());
-            log.debug(record);
+            record.setThread(Thread.currentThread());
+            logger.debug(record);
             
             buildMainMenu();
             setProgress(mainMenuValue);
@@ -930,8 +948,8 @@ public class NTApp extends SingleFrameApplication {
             record.setParameters(null);
             record.setSequenceNumber(8l);
             record.setSourceMethodName("doInBackground");
-            record.setThreadID(Thread.currentThread().getId());
-            log.debug(record);
+            record.setThread(Thread.currentThread());
+            logger.debug(record);
             
             loadSubMenus();
             loadMenuItems();
@@ -943,16 +961,16 @@ public class NTApp extends SingleFrameApplication {
             record.setParameters(null);
             record.setSequenceNumber(9l);
             record.setSourceMethodName("doInBackground");
-            record.setThreadID(Thread.currentThread().getId());
-            log.debug(record);
+            record.setThread(Thread.currentThread());
+            logger.debug(record);
             
             record.setInstant(Instant.now());
             record.setMessage(String.format("Returning %s", (Object) null));
             record.setParameters(null);
             record.setSequenceNumber(10l);
             record.setSourceMethodName("doInBackground");
-            record.setThreadID(Thread.currentThread().getId());
-            log.exit(record);
+            record.setThread(Thread.currentThread());
+            logger.exit(record);
             return null;
         }
         
@@ -963,8 +981,8 @@ public class NTApp extends SingleFrameApplication {
             record.setParameters(null);
             record.setSequenceNumber(11l);
             record.setSourceMethodName("finished");
-            record.setThreadID(Thread.currentThread().getId());
-            log.enter(record);
+            record.setThread(Thread.currentThread());
+            logger.enter(record);
             
             record.setInstant(Instant.now());
             record.setMessage("Showing the mainFrame and disposing of the "
@@ -972,8 +990,8 @@ public class NTApp extends SingleFrameApplication {
             record.setParameters(null);
             record.setSequenceNumber(12l);
             record.setSourceMethodName("finished");
-            record.setThreadID(Thread.currentThread().getId());
-            log.debug(record);
+            record.setThread(Thread.currentThread());
+            logger.debug(record);
             
             message("finishedMessage");
             show(mainFrame);
@@ -983,8 +1001,8 @@ public class NTApp extends SingleFrameApplication {
             record.setParameters(null);
             record.setSequenceNumber(13l);
             record.setSourceMethodName("finished");
-            record.setThreadID(Thread.currentThread().getId());
-            log.exit(record);
+            record.setThread(Thread.currentThread());
+            logger.exit(record);
             
         }
         

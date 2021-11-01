@@ -32,9 +32,9 @@
  */
 package com.gs.nta.accounting.options;
 
-import com.gs.nta.api.OptionsCategories;
-import com.gs.nta.api.OptionsPanelProvider;
-import com.gs.nta.utils.Properties;
+import com.gs.api.GSProperties;
+import com.gs.api.OptionsCategories;
+import com.gs.api.OptionsPanelProvider;
 import javax.swing.JPanel;
 
 /**
@@ -159,10 +159,10 @@ public class AccountingOptionsPanel extends javax.swing.JPanel implements Option
     // End of variables declaration//GEN-END:variables
 
     @Override
-    public void saveSettings(Properties properties) {
+    public void saveSettings(GSProperties properties) {
     }
 
     @Override
-    public void loadSettings(Properties properties) {
+    public void loadSettings(GSProperties properties) {
     }
 }

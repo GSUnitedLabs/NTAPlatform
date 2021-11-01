@@ -33,7 +33,7 @@
 package com.gs.nta.desktop;
 
 import com.gs.nta.desktop.panels.AboutModulePanel;
-import com.gs.nta.api.AboutPanelProvider;
+import com.gs.api.AboutPanelProvider;
 import java.util.ServiceLoader;
 import org.jdesktop.application.Application;
 import org.jdesktop.application.ApplicationContext;

@@ -32,8 +32,8 @@
  */
 package com.gs.nta.accounting.desktop;
 
-import com.gs.nta.api.AboutPanelProvider;
-import com.gs.nta.utils.TerminalErrorPrinter;
+import com.gs.api.AboutPanelProvider;
+import com.gs.utils.TerminalErrorPrinter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
