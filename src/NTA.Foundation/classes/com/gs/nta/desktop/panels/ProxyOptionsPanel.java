@@ -443,24 +443,34 @@ public class ProxyOptionsPanel extends javax.swing.JPanel
     public void loadSettings(GSProperties properties) {
         Properties props = (Properties) properties;
         
-        boolean usingProxy = props.getPropertyAsBoolean("net.usingProxy");
-        boolean usingSystemProxy = props.getPropertyAsBoolean("net.usingSystemProxy");
-        
-        noProxyRadioButton.setSelected(!usingProxy && !usingSystemProxy);
-        systemProxyRadioButton.setSelected(usingProxy && usingSystemProxy);
-        manuProxyRadioButton.setSelected(usingProxy && !usingSystemProxy);
-        
-        if (noProxyRadioButton.isSelected()) {
-            proxyServerField.setText("");
-            proxyPortField.setText("");
-        } else {
-            proxyServerField.setText(props.getPropertyAsString("net.proxy.server"));
-            proxyPortField.setText(props.getPropertyAsString("net.proxy.port"));
+        try {
+            boolean usingProxy = props.getPropertyAsBoolean("net.usingProxy");
+            boolean usingSystemProxy = props.getPropertyAsBoolean("net.usingSystemProxy");
+
+            noProxyRadioButton.setSelected(!usingProxy && !usingSystemProxy);
+            systemProxyRadioButton.setSelected(usingProxy && usingSystemProxy);
+            manuProxyRadioButton.setSelected(usingProxy && !usingSystemProxy);
+
+            if (noProxyRadioButton.isSelected()) {
+                proxyServerField.setText("");
+                proxyPortField.setText("");
+            } else {
+                proxyServerField.setText(props.getPropertyAsString("net.proxy.server"));
+                proxyPortField.setText(props.getPropertyAsString("net.proxy.port"));
+            }
+
+            allowStatisticsCheckBox.setSelected(props.getPropertyAsBoolean("allow.usageStatistics"));
+
+            loadBrowserList();
+        } catch (NullPointerException ex) {
+            record.setInstant(Instant.now());
+            record.setMessage("Attempting to load options panels.");
+            record.setParameters(null);
+            record.setSourceMethodName("loadSettings");
+            record.setThread(Thread.currentThread());
+            record.setThrown(ex);
+            logger.error(record);
         }
-        
-        allowStatisticsCheckBox.setSelected(props.getPropertyAsBoolean("allow.usageStatistics"));
-        
-        loadBrowserList();
     }
     
     private void loadBrowserList() {
@@ -504,7 +514,7 @@ public class ProxyOptionsPanel extends javax.swing.JPanel
                 defaultBrowser = (app.getProperties().getPropertyAsString(
                     "default.browser") == null) ? null :
                     app.getProperties().getPropertyAsString("default.browser");
-            } catch (IOException ex) {
+            } catch (NullPointerException | IOException ex) {
                 record.setInstant(Instant.now());
                 record.setMessage("Attempting to read in installed browsers file.");
                 record.setParameters(null);
