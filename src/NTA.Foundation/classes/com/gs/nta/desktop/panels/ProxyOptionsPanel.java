@@ -41,7 +41,6 @@ import com.gs.api.OptionsPanelProvider;
 import com.gs.nta.desktop.BrowserConfigDialog;
 import com.gs.nta.properties.Properties;
 import com.gs.utils.MessageBox;
-import com.gs.utils.ScreenUtils;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.BufferedReader;
@@ -460,8 +459,6 @@ public class ProxyOptionsPanel extends javax.swing.JPanel
             }
 
             allowStatisticsCheckBox.setSelected(props.getPropertyAsBoolean("allow.usageStatistics"));
-
-            loadBrowserList();
         } catch (NullPointerException ex) {
             record.setInstant(Instant.now());
             record.setMessage("Attempting to load options panels.");
@@ -471,6 +468,8 @@ public class ProxyOptionsPanel extends javax.swing.JPanel
             record.setThrown(ex);
             logger.error(record);
         }
+        
+        loadBrowserList();
     }
     
     private void loadBrowserList() {
