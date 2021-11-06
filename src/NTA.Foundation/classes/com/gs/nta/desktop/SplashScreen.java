@@ -32,13 +32,16 @@
  */
 package com.gs.nta.desktop;
 
+import com.gs.api.GSLogRecord;
+import com.gs.api.GSLogger;
 import com.gs.nta.NTApp;
-import com.gs.nta.utils.LogRecord;
-import com.gs.nta.utils.Logger;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.lang.System.Logger;
+import java.time.Instant;
+import java.util.ServiceLoader;
 import org.jdesktop.application.Application;
 
 /**
@@ -49,14 +52,32 @@ public class SplashScreen extends javax.swing.JFrame
         implements ActionListener, PropertyChangeListener {
 
     private final NTApp app = (NTApp) Application.getInstance();
-    private final Logger logger = Logger.getLogger(app, 
-            app.getProperties().getPropertyAsInteger("logger.level"));
-    private final LogRecord record = new LogRecord(SplashScreen.class.getSimpleName());
+    private final GSLogger logger;
+    private final GSLogRecord record;
 
     /**
      * Creates new form SplashScreen
      */
     public SplashScreen() {
+        // To initialize the logger, we need to get a service for it.
+        ServiceLoader<GSLogger> logLoader = ServiceLoader.load(GSLogger.class);
+        // We are only interested in the first GSLogger that we find.
+        logger = logLoader.iterator().next();
+        logger.setClassName(getClass().getCanonicalName());
+        logger.setLevel(app.getContext().getResourceMap().getInteger("Application.logging.level"));
+        logger.setFormattedOutput(true);
+
+        // To initialize the record, we need to get a service for it.
+        ServiceLoader<GSLogRecord> recordLoader = ServiceLoader.load(GSLogRecord.class);
+        // We are only interested in the first GSLogRecord that we find.
+        record = recordLoader.iterator().next();
+        record.setSourceClassName(logger.getClassName());
+        record.setInstant(Instant.now());
+        record.setMessage("Constructing an instance of Properties");
+        record.setParameters(null);
+        record.setSourceMethodName("Properties [Constructor]");
+        record.setThread(Thread.currentThread());
+        logger.enter(record);
         initComponents();
     }
     

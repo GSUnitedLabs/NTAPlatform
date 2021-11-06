@@ -32,7 +32,7 @@
  */
 package com.gs.nta.menus;
 
-import com.gs.nta.api.MenuProvider;
+import com.gs.api.MenuProvider;
 import org.jdesktop.application.Application;
 
 /**

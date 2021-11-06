@@ -32,15 +32,29 @@
  */
 package com.gs.nta.desktop.panels;
 
+import com.gs.api.GSLogRecord;
+import com.gs.api.GSLogger;
+import com.gs.api.GSProperties;
 import com.gs.nta.NTApp;
-import com.gs.nta.api.OptionsCategories;
-import com.gs.nta.api.OptionsPanelProvider;
-import com.gs.nta.utils.Properties;
+import com.gs.api.OptionsCategories;
+import com.gs.api.OptionsPanelProvider;
+import com.gs.nta.desktop.BrowserConfigDialog;
+import com.gs.nta.properties.Properties;
+import com.gs.utils.MessageBox;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.time.Instant;
+import java.util.ServiceLoader;
 import javax.swing.JPanel;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import org.jdesktop.application.Action;
 import org.jdesktop.application.Application;
 
 /**
@@ -53,11 +67,21 @@ public class ProxyOptionsPanel extends javax.swing.JPanel
     private static ProxyOptionsPanel panel;
     private static NTApp app;
     private static PropertyChangeSupport pcs;
+    private GSLogRecord record;
+    private GSLogger logger;
 
     /**
      * Creates new form ProxyOptionsPanel
      */
     public ProxyOptionsPanel() {
+        ServiceLoader<GSLogger> logLoader = ServiceLoader.load(GSLogger.class);
+        logger = logLoader.iterator().next();
+        logger.setClassName(getClass().getCanonicalName());
+        logger.setLevel(app.getProperties().getPropertyAsInteger("logging.level"));
+        ServiceLoader<GSLogRecord> loader = ServiceLoader.load(GSLogRecord.class);
+        record = loader.iterator().next();
+        record.setSourceClassName(getClass().getSimpleName());
+        
         initComponents();
         
         app = (NTApp) Application.getInstance();
@@ -71,24 +95,29 @@ public class ProxyOptionsPanel extends javax.swing.JPanel
         loadSettings(app.getProperties());
     }
     
+    @Override
     public void addPropertyChangeListener(PropertyChangeListener listener) {
         pcs.addPropertyChangeListener(listener);
     }
     
+    @Override
     public void addPropertyChangeListener(String propertyName, 
             PropertyChangeListener listener) {
         pcs.addPropertyChangeListener(propertyName, listener);
     }
     
+    @Override
     public void removePropertyChangeListener(PropertyChangeListener listener) {
         pcs.removePropertyChangeListener(listener);
     }
     
+    @Override
     public void removePropertyChangeListener(String propertyName, 
             PropertyChangeListener listener) {
         pcs.removePropertyChangeListener(propertyName, listener);
     }
     
+    @Override
     public void firePropertyChange(String propertyName, Object oldValue, 
             Object newValue) {
         if (propertyName != null && oldValue != null && newValue != null) {
@@ -150,6 +179,14 @@ public class ProxyOptionsPanel extends javax.swing.JPanel
 
         proxyPortField.setEnabled(false);
         proxyPortField.setName("proxyPortField"); // NOI18N
+        proxyPortField.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                textFieldFocused(evt);
+            }
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                textFieldUnfocused(evt);
+            }
+        });
 
         proxyPortLabel.setText(resourceMap.getString("proxyPortLabel.text")); // NOI18N
         proxyPortLabel.setEnabled(false);
@@ -157,6 +194,14 @@ public class ProxyOptionsPanel extends javax.swing.JPanel
 
         proxyServerField.setEnabled(false);
         proxyServerField.setName("proxyServerField"); // NOI18N
+        proxyServerField.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                textFieldFocused(evt);
+            }
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                textFieldUnfocused(evt);
+            }
+        });
 
         httpProxyLabel.setText(resourceMap.getString("httpProxyLabel.text")); // NOI18N
         httpProxyLabel.setEnabled(false);
@@ -211,6 +256,8 @@ public class ProxyOptionsPanel extends javax.swing.JPanel
             }
         });
 
+        javax.swing.ActionMap actionMap = org.jdesktop.application.Application.getInstance().getContext().getActionMap(ProxyOptionsPanel.class, this);
+        editBrowserListButton.setAction(actionMap.get("showManager")); // NOI18N
         editBrowserListButton.setIcon(resourceMap.getIcon("editBrowserListButton.icon")); // NOI18N
         editBrowserListButton.setMnemonic('E');
         editBrowserListButton.setText(resourceMap.getString("editBrowserListButton.text")); // NOI18N
@@ -338,6 +385,18 @@ public class ProxyOptionsPanel extends javax.swing.JPanel
                 allowStatisticsCheckBox.isSelected());
     }//GEN-LAST:event_allowStatisticsCheckBoxItemStateChanged
 
+    private void textFieldFocused(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_textFieldFocused
+        if (evt.getSource() instanceof javax.swing.JTextField) {
+            ((javax.swing.JTextField) evt.getSource()).selectAll();
+        }
+    }//GEN-LAST:event_textFieldFocused
+
+    private void textFieldUnfocused(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_textFieldUnfocused
+        if (evt.getSource() instanceof javax.swing.JTextField) {
+            ((javax.swing.JTextField) evt.getSource()).select(0, 0);
+        }
+    }//GEN-LAST:event_textFieldUnfocused
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JCheckBox allowStatisticsCheckBox;
     private javax.swing.JButton editBrowserListButton;
@@ -381,46 +440,160 @@ public class ProxyOptionsPanel extends javax.swing.JPanel
     }
     
     @Override
-    public void loadSettings(Properties props) {
-        proxyServerField.setText(props.getPropertyAsString("net.proxy.server"));
-        proxyPortField.setText(props.getPropertyAsString("net.proxy.port"));
+    public void loadSettings(GSProperties properties) {
+        Properties props = (Properties) properties;
         
-        noProxyRadioButton.setSelected(props.getProperty("net.usingProxy") == null
-                ? !props.getPropertyAsBoolean("net.usingSystemProxy") 
-                        && !props.getPropertyAsBoolean("net.usingProxy")
-                : !props.getPropertyAsBoolean("net.usingProxy"));
+        try {
+            boolean usingProxy = props.getPropertyAsBoolean("net.usingProxy");
+            boolean usingSystemProxy = props.getPropertyAsBoolean("net.usingSystemProxy");
+
+            noProxyRadioButton.setSelected(!usingProxy && !usingSystemProxy);
+            systemProxyRadioButton.setSelected(usingProxy && usingSystemProxy);
+            manuProxyRadioButton.setSelected(usingProxy && !usingSystemProxy);
+
+            if (noProxyRadioButton.isSelected()) {
+                proxyServerField.setText("");
+                proxyPortField.setText("");
+            } else {
+                proxyServerField.setText(props.getPropertyAsString("net.proxy.server"));
+                proxyPortField.setText(props.getPropertyAsString("net.proxy.port"));
+            }
+
+            allowStatisticsCheckBox.setSelected(props.getPropertyAsBoolean("allow.usageStatistics"));
+        } catch (NullPointerException ex) {
+            record.setInstant(Instant.now());
+            record.setMessage("Attempting to load options panels.");
+            record.setParameters(null);
+            record.setSourceMethodName("loadSettings");
+            record.setThread(Thread.currentThread());
+            record.setThrown(ex);
+            logger.error(record);
+        }
         
-        manuProxyRadioButton.setSelected(props.getProperty("net.usingProxy") == null
-                ? !props.getPropertyAsBoolean("net.usingSystemProxy") 
-                        && !props.getPropertyAsString("net.proxy.server").equals("[using system proxy]")
-                        && !props.getPropertyAsString("net.proxy.port").equals("[Sys]")
-                : !props.getPropertyAsBoolean("net.usingSystemProxy") 
-                        && props.getPropertyAsBoolean("net.usingProxy"));
+        loadBrowserList();
+    }
+    
+    private void loadBrowserList() {
+        webBrowsersList.removeAllItems();   // Clear the list to start.
         
-        systemProxyRadioButton.setSelected(props.getProperty("net.usingSystemProxy") == null
-                ? true : props.getPropertyAsBoolean("net.usingSystemProxy"));
+        String configPath = app.getContext().getLocalStorage().getDirectory().getAbsolutePath();
+        if (!configPath.endsWith(File.separator)) {
+            configPath += File.separator;
+        }
+        configPath += "etc" + File.separator + "installed.brwsrs";
+        File installedBrowsers = new File(configPath);
         
-        allowStatisticsCheckBox.setSelected(props.getPropertyAsBoolean("allow.usageStatistics"));
+        String defaultBrowser = null;
+        
+        if (!installedBrowsers.exists()) {
+            // Add the option for the system default browser.
+            webBrowsersList.addItem("<System Default Browser>");
+
+            // Add Firefox, Chrome, and Mozilla (standard web browsers on most systems.
+            webBrowsersList.addItem("Firefox");
+            webBrowsersList.addItem("Chrome");
+            webBrowsersList.addItem("Mozilla");
+
+            // If running on windows, add Internet Explorer and Microsoft Edge.
+            if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+                webBrowsersList.addItem("Internet Explorer");
+                webBrowsersList.addItem("Microsoft Edge");
+            }
+
+            // If running on Mac OS X, add Opera.
+            if (System.getProperty("os.name").toLowerCase().contains("mac os x")) {
+                webBrowsersList.addItem("Opera");
+            }
+        } else {
+            try (BufferedReader in = new BufferedReader(new FileReader(installedBrowsers))) {
+                String line;
+                while ((line = in.readLine()) != null) {
+                    webBrowsersList.addItem(line);
+                }
+                
+                defaultBrowser = (app.getProperties().getPropertyAsString(
+                    "default.browser") == null) ? null :
+                    app.getProperties().getPropertyAsString("default.browser");
+            } catch (NullPointerException | IOException ex) {
+                record.setInstant(Instant.now());
+                record.setMessage("Attempting to read in installed browsers file.");
+                record.setParameters(null);
+                record.setSourceMethodName("loadBrowserList");
+                record.setThread(Thread.currentThread());
+                record.setThrown(ex);
+                logger.error(record);
+                MessageBox.showError(ex, "I/O Error");
+            }
+        }
+        
+        if (webBrowsersList.getItemCount() > 0) {
+            // Select the browser set as the system default.
+            if (defaultBrowser != null && !defaultBrowser.isEmpty()) {
+                webBrowsersList.setSelectedItem(defaultBrowser);
+            } else {
+                webBrowsersList.setSelectedItem("<System Default Browser>");
+            }
+        }
     }
     
     @Override
-    public void saveSettings(Properties props) {
+    public void saveSettings(GSProperties props) {
         props.setSystemProperty("net.usingProxy", !noProxyRadioButton.isSelected());
-        if (!noProxyRadioButton.isSelected()) {
+        if (noProxyRadioButton.isSelected()) {
             proxyServerField.setText("");
             proxyPortField.setText("");
+            props.setSystemProperty("net.usingSystemProxy", Boolean.FALSE);
         }
+        
+        props.setSystemProperty("net.proxy.server", proxyPortField.getText());
+        props.setSystemProperty("net.proxy.port", proxyServerField.getText());
+        
         if (manuProxyRadioButton.isSelected()) {
             props.setSystemProperty("net.usingSystemProxy", Boolean.FALSE);
+            props.setSystemProperty("net.usingProxy", Boolean.TRUE);
             props.setSystemProperty("net.proxy.server", proxyServerField.getText());
             props.setSystemProperty("net.proxy.port", proxyPortField.getText());
-        } else if (systemProxyRadioButton.isSelected()) {
+        }
+        
+        if (systemProxyRadioButton.isSelected()) {
+            props.setSystemProperty("net.usingProxy", Boolean.TRUE);
             props.setSystemProperty("net.usingSystemProxy", Boolean.TRUE);
             props.setSystemProperty("net.proxy.server", "[using system proxy]");
             props.setSystemProperty("net.proxy.port", "[Sys]");
         }
         
         props.setSystemProperty("allow.usageStatistics", allowStatisticsCheckBox.isSelected());
+        props.setSystemProperty("default.browser", webBrowsersList.getSelectedItem().toString());
+        
+        String[] browsers = new String[webBrowsersList.getItemCount()];
+        for (int x = 0; x < webBrowsersList.getItemCount(); x++) {
+            browsers[x] = webBrowsersList.getItemAt(x);
+        }
+        
+        String browsersFilePath = app.getContext().getLocalStorage().getDirectory().getAbsolutePath();
+        if (!browsersFilePath.endsWith(File.separator)) {
+            browsersFilePath += File.separator;
+        }
+        browsersFilePath += "etc" + File.separator + "installed.brwsrs";
+        File browsersFile = new File(browsersFilePath);
+        
+        try (BufferedWriter out = new BufferedWriter(new FileWriter(browsersFile))) {
+            for (String browser : browsers) {
+                if (!"<System Default Browser>".equals(browser)) {
+                    out.write(browser + "\n");
+                    out.flush();
+                }
+            }
+        } catch (IOException ex) {
+                record.setInstant(Instant.now());
+                record.setMessage("Attempting to write out installed browsers file.");
+                record.setParameters(null);
+                record.setSourceMethodName("saveSettings");
+                record.setThread(Thread.currentThread());
+                record.setThrown(ex);
+                logger.error(record);
+                MessageBox.showError(ex, "I/O Error");
+        }
     }
 
     @Override
@@ -436,5 +609,12 @@ public class ProxyOptionsPanel extends javax.swing.JPanel
     @Override
     public void changedUpdate(DocumentEvent e) {
         pcs.firePropertyChange("textChanged", null, null);
+    }
+
+    @Action
+    public void showManager() {
+        BrowserConfigDialog dlg = new BrowserConfigDialog(null, true);
+        dlg.pack();
+        app.show(dlg);
     }
 }

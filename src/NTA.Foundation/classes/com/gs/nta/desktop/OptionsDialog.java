@@ -31,14 +31,18 @@
  * *****************************************************************************
  */
 package com.gs.nta.desktop;
-
+ 
+import com.gs.api.GSLogRecord;
+import com.gs.api.GSLogger;
 import com.gs.nta.NTApp;
-import com.gs.nta.api.OptionsPanelProvider;
+import com.gs.api.OptionsPanelProvider;
 import java.awt.CardLayout;
 import java.awt.Component;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.time.Instant;
 import java.util.Iterator;
+import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import javax.swing.JTabbedPane;
 import org.jdesktop.application.Action;
@@ -51,6 +55,8 @@ import org.jdesktop.application.Application;
 public class OptionsDialog extends javax.swing.JDialog 
         implements PropertyChangeListener {
 
+    private final GSLogger logger;
+    private final GSLogRecord record;
     private final CardLayout cards;
     private final NTApp app;
     
@@ -59,6 +65,14 @@ public class OptionsDialog extends javax.swing.JDialog
      */
     public OptionsDialog(java.awt.Frame parent, boolean modal) {
         super(parent, modal);
+        
+        ServiceLoader<GSLogger> logLoader = ServiceLoader.load(GSLogger.class);
+        logger = logLoader.iterator().next();
+        logger.setClassName(getClass().getCanonicalName());
+        logger.updateLogName();
+        ServiceLoader<GSLogRecord> loader = ServiceLoader.load(GSLogRecord.class);
+        record = loader.iterator().next();
+        record.setSourceClassName(logger.getClassName());
         
         app = (NTApp) Application.getInstance();
         
@@ -72,44 +86,54 @@ public class OptionsDialog extends javax.swing.JDialog
     }
     
     private void loadOptionsPanels() {
-        ServiceLoader<OptionsPanelProvider> providers = ServiceLoader.load(OptionsPanelProvider.class);
-        
-        Iterator<OptionsPanelProvider> it = providers.iterator();
-        
-        while(it.hasNext()) {
-//        for (OptionsPanelProvider p : providers) {
-            OptionsPanelProvider p = it.next();
-            
-            switch (p.getCategory()) {
-                case ACCOUNTING:
-                    accountingPanel.add(p.getInstance());
-                    accountingPanel.setTitleAt(accountingPanel.getTabCount() - 1, p.getTitle());
-                    break;
-                case GENERAL:
-                    generalPanel.add(p.getInstance());
-                    generalPanel.setTitleAt(generalPanel.getTabCount() - 1, p.getTitle());
-                    break;
-                case INTERFACE:
-                    interfacePanel.add(p.getInstance());
-                    interfacePanel.setTitleAt(interfacePanel.getTabCount() - 1, p.getTitle());
-                    break;
-                case MISCELLANEOUS:
-                    miscOptionsPanel.add(p.getInstance());
-                    miscOptionsPanel.setTitleAt(miscOptionsPanel.getTabCount() - 1, p.getTitle());
-                    break;
-                case REPORTS:
-                    reportsPanel.add(p.getInstance());
-                    reportsPanel.setTitleAt(reportsPanel.getTabCount() - 1, p.getTitle());
-                    break;
-                case SCHEDULING:
-                    schedulingPanel.add(p.getInstance());
-                    schedulingPanel.setTitleAt(schedulingPanel.getTabCount() - 1, p.getTitle());
-                    break;
-                default:
-                    throw new IllegalArgumentException("invalid category supplied");
+        try {
+            ServiceLoader<OptionsPanelProvider> providers = ServiceLoader.load(OptionsPanelProvider.class);
+
+            Iterator<OptionsPanelProvider> it = providers.iterator();
+
+            while(it.hasNext()) {
+    //        for (OptionsPanelProvider p : providers) {
+                OptionsPanelProvider p = it.next();
+
+                switch (p.getCategory()) {
+                    case ACCOUNTING:
+                        accountingPanel.add(p.getInstance());
+                        accountingPanel.setTitleAt(accountingPanel.getTabCount() - 1, p.getTitle());
+                        break;
+                    case GENERAL:
+                        generalPanel.add(p.getInstance());
+                        generalPanel.setTitleAt(generalPanel.getTabCount() - 1, p.getTitle());
+                        break;
+                    case INTERFACE:
+                        interfacePanel.add(p.getInstance());
+                        interfacePanel.setTitleAt(interfacePanel.getTabCount() - 1, p.getTitle());
+                        break;
+                    case MISCELLANEOUS:
+                        miscOptionsPanel.add(p.getInstance());
+                        miscOptionsPanel.setTitleAt(miscOptionsPanel.getTabCount() - 1, p.getTitle());
+                        break;
+                    case REPORTS:
+                        reportsPanel.add(p.getInstance());
+                        reportsPanel.setTitleAt(reportsPanel.getTabCount() - 1, p.getTitle());
+                        break;
+                    case SCHEDULING:
+                        schedulingPanel.add(p.getInstance());
+                        schedulingPanel.setTitleAt(schedulingPanel.getTabCount() - 1, p.getTitle());
+                        break;
+                    default:
+                        throw new IllegalArgumentException("invalid category supplied");
+                }
+                p.getInstance().addPropertyChangeListener("textChanged", this);
+                p.getInstance().addPropertyChangeListener("itemStateChanged", this);
             }
-            p.getInstance().addPropertyChangeListener("textChanged", this);
-            p.getInstance().addPropertyChangeListener("itemStateChanged", this);
+        } catch (ServiceConfigurationError svc) {
+            record.setInstant(Instant.now());
+            record.setMessage("Attempting to load options panels.");
+            record.setParameters(null);
+            record.setSourceMethodName("loadOptionsPanels");
+            record.setThread(Thread.currentThread());
+            record.setThrown(svc);
+            logger.error(record);
         }
     }
 
