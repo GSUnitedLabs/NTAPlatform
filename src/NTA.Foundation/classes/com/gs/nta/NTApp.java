@@ -144,6 +144,10 @@ public class NTApp extends SingleFrameApplication {
     @Override
     protected void initialize(String[] args) {
         props = new Properties(getContext());
+        // Set the application default logging level.
+        props.setRuntimeProperty("logging.level", 
+                getContext().getResourceMap().getInteger(
+                        "Application.logging.level"));
         
         // To initialize the logger, we need to get a service for it.
         ServiceLoader<GSLogger> logLoader = ServiceLoader.load(GSLogger.class);
@@ -151,7 +155,7 @@ public class NTApp extends SingleFrameApplication {
         logger = logLoader.iterator().next();
         logger.setClassName(getClass().getCanonicalName());
         logger.updateLogName();
-        logger.setLevel(getContext().getResourceMap().getInteger("Application.logging.level"));
+        logger.setLevel(props.getPropertyAsInteger("logging.level"));
         logger.setFormattedOutput(true);
 
         // To initialize the record, we need to get a service for it.
@@ -264,18 +268,18 @@ public class NTApp extends SingleFrameApplication {
             logger.config(record);
 
             props.setRuntimeProperty("development.mode", true);
-            props.setRuntimeProperty("logger.level", GSLogger.TRACE);
+            props.setRuntimeProperty("logging.level", GSLogger.TRACE);
             logger.setLevel(GSLogger.TRACE);
         } else {
             props.setRuntimeProperty("development.mode", false);
-            props.setRuntimeProperty("logger.level", GSLogger.WARN);
+            props.setRuntimeProperty("logging.level", GSLogger.WARN);
         }
 
         record.setInstant(Instant.now());
         record.setMessage("\"development.mode\" = "
                 + props.getPropertyAsBoolean("development.mode")
                 + "\n\"logger.level\" = "
-                + props.getPropertyAsInteger("logger.level"));
+                + props.getPropertyAsInteger("logging.level"));
         logger.config(record);
 
         String arg = null;
@@ -294,20 +298,20 @@ public class NTApp extends SingleFrameApplication {
                     case "developing":
                     case "ide":
                     case "programming":
-                        props.setRuntimeProperty("logger.level", GSLogger.TRACE);
+                        props.setRuntimeProperty("logging.level", GSLogger.TRACE);
                         logger.setLevel(GSLogger.TRACE);
                         break;
                     case "debugging":
                     case "debug":
                     case "dbg":
-                        props.setRuntimeProperty("logger.level", GSLogger.DEBUG);
+                        props.setRuntimeProperty("logging.level", GSLogger.DEBUG);
                         logger.setLevel(GSLogger.DEBUG);
                         break;
                     case "configuration":
                     case "configure":
                     case "config":
                     case "cfg":
-                        props.setRuntimeProperty("logger.level", GSLogger.CONFIG);
+                        props.setRuntimeProperty("logging.level", GSLogger.CONFIG);
                         logger.setLevel(GSLogger.CONFIG);
                         break;
                     case "informational":
@@ -315,26 +319,26 @@ public class NTApp extends SingleFrameApplication {
                     case "inform":
                     case "info":
                     case "inf":
-                        props.setRuntimeProperty("logger.level", GSLogger.INFO);
+                        props.setRuntimeProperty("logging.level", GSLogger.INFO);
                         logger.setLevel(GSLogger.INFO);
                         break;
                     case "warning":
                     case "warn":
-                        props.setRuntimeProperty("logger.level", GSLogger.WARN);
+                        props.setRuntimeProperty("logging.level", GSLogger.WARN);
                         logger.setLevel(GSLogger.WARN);
                         break;
                     case "error":
                     case "err":
-                        props.setRuntimeProperty("logger.level", GSLogger.ERROR);
+                        props.setRuntimeProperty("logging.level", GSLogger.ERROR);
                         logger.setLevel(GSLogger.ERROR);
                         break;
                     case "critical":
                     case "severe":
-                        props.setRuntimeProperty("logger.level", GSLogger.CRITICAL);
+                        props.setRuntimeProperty("logging.level", GSLogger.CRITICAL);
                         logger.setLevel(GSLogger.CRITICAL);
                         break;
                     default:
-                        props.setRuntimeProperty("logger.level", GSLogger.OFF);
+                        props.setRuntimeProperty("logging.level", GSLogger.OFF);
                         logger.setLevel(GSLogger.OFF);
                 }
             }
@@ -355,9 +359,9 @@ public class NTApp extends SingleFrameApplication {
         }
 
         if (arg != null) {
-            props.setRuntimeProperty("logs.formatted", true);
+            props.setRuntimeProperty("logging.format.output", true);
         } else {
-            props.setRuntimeProperty("logs.formatted", false);
+            props.setRuntimeProperty("logging.format.output", false);
         }
     } // </editor-fold>
 

@@ -76,10 +76,11 @@ public class ProxyOptionsPanel extends javax.swing.JPanel
     public ProxyOptionsPanel() {
         ServiceLoader<GSLogger> logLoader = ServiceLoader.load(GSLogger.class);
         logger = logLoader.iterator().next();
+        logger.setClassName(getClass().getCanonicalName());
+        logger.setLevel(app.getProperties().getPropertyAsInteger("logging.level"));
         ServiceLoader<GSLogRecord> loader = ServiceLoader.load(GSLogRecord.class);
         record = loader.iterator().next();
-        logger.setClassName(getClass().getCanonicalName());
-        record.setSourceClassName(logger.getClassName());
+        record.setSourceClassName(getClass().getSimpleName());
         
         initComponents();
         
